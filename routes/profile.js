@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const upload = require('../config/upload');
+const pdf = require('pdf-parse');
+const fs = require('fs');
 
 router.get('/', async (req, res) => {
     try {
@@ -37,6 +40,24 @@ router.put('/', async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: err.message });
     } 
+});
+
+router.post('/resume', upload.single('resume'), async (req, res) => {
+  try {
+    const dataBuffer = fs.readFileSync(req.file.path);
+    const pdfData = await pdf(dataBuffer);
+    const extractedText = pdfData.text;
+
+    const updated = await User.findByIdAndUpdate(
+      req.user.userId,
+      { resume: extractedText },
+      { new: true }
+    ).select('-password');
+
+    res.json({ message: 'Resume uploaded and parsed', user: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 
