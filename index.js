@@ -18,8 +18,10 @@ const PORT = process.env.PORT || 5000;
 const authRoutes = require('./routes/auth');
 const authMiddleware = require('./middleware/auth');
 const profileRoutes = require('./routes/profile');
+const jobRoutes = require('./routes/jobs');
 
 app.use('/auth', authRoutes);
 app.use('/profile', authMiddleware, profileRoutes);
+app.use('/jobs', authMiddleware, jobRoutes);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
