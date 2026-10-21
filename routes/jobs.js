@@ -83,4 +83,45 @@ router.get('/match', async (req, res) => {
     }
 });
 
+router.post('/cover-letter', async (req, res) => {
+    try {
+        const {jobTitle, company, jobDescription} = req.body;
+
+        if (!jobTitle || !company || !jobDescription) {
+            return res.status(400).json({error: 'Job title, company and description are required'});
+        }
+
+        const user = await User.findById(req.user.userId).select('-password');
+
+        if (!user.resume) {
+            return res.status(400).json({error: 'Please upload your resume first'});
+        }
+
+        const model = genAI.getGenerativeModel({model: 'gemini-3.8-flash'});
+
+        const result = await model.generateContent(`
+            Write a professional cover letter for this candidate applying to this job.
+            
+            Candidate Resume:
+            ${user.resume}
+
+            Job Title: ${jobTitle}
+            Company: ${company}
+            Job Description: ${jobDescription.slice(0, 1000)}
+
+            Requirements:
+            - 3 paragraph max
+            - Professional but personable tone
+            - Reference specific skills from resume that match the job
+            - Do not use generic phrase like "I am writing to express my interest"
+            - End with a confident closing
+            - No placeholders like [Your Name] - use the actual name from the resume
+        `);
+
+        res.json({coverLetter: result.response.text()});
+    } catch (err) {
+        res.status(500).json({error: err.message});
+    }
+});
+
 module.exports = router;
