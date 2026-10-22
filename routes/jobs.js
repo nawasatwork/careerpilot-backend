@@ -32,7 +32,7 @@ router.get('/match', async (req, res) => {
 
         const jobs = response.data.data.jobs.slice(0, 10);
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
 
         const scoringPrompt = `
             You are a job matching expert. Score each job 1-10 based on how well it matches this candidate profile.
@@ -85,19 +85,19 @@ router.get('/match', async (req, res) => {
 
 router.post('/cover-letter', async (req, res) => {
     try {
-        const {jobTitle, company, jobDescription} = req.body;
+        const { jobTitle, company, jobDescription } = req.body;
 
         if (!jobTitle || !company || !jobDescription) {
-            return res.status(400).json({error: 'Job title, company and description are required'});
+            return res.status(400).json({ error: 'Job title, company and description are required' });
         }
 
         const user = await User.findById(req.user.userId).select('-password');
 
         if (!user.resume) {
-            return res.status(400).json({error: 'Please upload your resume first'});
+            return res.status(400).json({ error: 'Please upload your resume first' });
         }
 
-        const model = genAI.getGenerativeModel({model: 'gemini-3.8-flash'});
+        const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
 
         const result = await model.generateContent(`
             Write a professional cover letter for this candidate applying to this job.
@@ -118,10 +118,47 @@ router.post('/cover-letter', async (req, res) => {
             - No placeholders like [Your Name] - use the actual name from the resume
         `);
 
-        res.json({coverLetter: result.response.text()});
+        res.json({ coverLetter: result.response.text() });
     } catch (err) {
-        res.status(500).json({error: err.message});
+        res.status(500).json({ error: err.message });
     }
 });
+
+router.post('/interview-prep', async (req, res) => {
+    try {
+        const { jobTitle, company, jobDescription } = req.body;
+
+        const user = await User.findById(req.user.userId).select('-password');
+
+        if (!user.resume) {
+            return res.status(400).json({ error: 'Please upload your resume first' });
+        }
+
+        const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
+
+        const result = await model.generateContent(`
+            Generate 10 interview questions with model answers for this candidate.
+            
+            Candidate Resume:
+            ${user.resume}
+            
+            Job Title: ${jobTitle}
+            Company: ${company}
+            Job Description: ${jobDescription.slice(0, 1000)}
+            
+            Format each question as:
+            Q: [question]
+            A: [model answer based on candidate's actual experience]
+            
+            Make questions specific to both the job requirements and the candidate's background.
+            Mix technical and behavioral questions.
+        `);
+
+        res.json({ interviewPrep: result.response.text() });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+})
 
 module.exports = router;
