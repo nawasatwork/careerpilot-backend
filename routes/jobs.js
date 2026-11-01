@@ -66,6 +66,7 @@ router.get('/match', async (req, res) => {
         const matchedJobs = jobs.map((job, i) => ({
             title: job.job_title,
             company: job.employer_name,
+            description: (job.job_description || '').slice(0, 3000),
             location: job.job_city || job.job_country,
             url: job.job_apply_link,
             score: scores[i]?.score || 0,

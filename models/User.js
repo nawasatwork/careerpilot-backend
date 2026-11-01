@@ -12,6 +12,6 @@ const userSchema = new mongoose.Schema({
     linkedinUrl: String, 
     githubUrl: String,
     location: String,
-}, { timestamp: true});
+}, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

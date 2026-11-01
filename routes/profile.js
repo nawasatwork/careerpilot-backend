@@ -50,7 +50,7 @@ router.post('/resume', upload.single('resume'), async (req, res) => {
     const pdfData = await pdf(dataBuffer);
     const extractedText = pdfData.text;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-3.8-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
     const result = await model.generateContent(`
         You are a resume parser. Extract information from this resume and return ONLY a JSON object with these fields:
         {
@@ -82,9 +82,11 @@ router.post('/resume', upload.single('resume'), async (req, res) => {
     ).select('-password');
 
     res.json({ message: 'Resume uploaded, parsed and profile updated', parsed, user: updated });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    } finally {
+        if (req.file) fs.unlink(req.file.path, () => {});
+    }
 });
 
 
